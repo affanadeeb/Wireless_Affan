@@ -117,3 +117,113 @@ Inconsistency in EKF-SLAM arises from:
 
 The paper addresses this issue by proposing the **First Estimates Jacobian (FEJ)-EKF**, which ensures that Jacobians are computed using the first available estimates for state variables, aligning the EKF's observability properties with the true nonlinear SLAM system.
 
+### Code Explanation :
+This `EKFSLAM` class implements a simulation environment for testing Extended Kalman Filter (EKF)-based Simultaneous Localization and Mapping (SLAM) in MATLAB. The class includes properties to define parameters, methods to simulate and evaluate the EKF's performance, and a mechanism to visualize the results. Here's a detailed explanation of the code:
+
+---
+
+### **Properties**
+These define parameters for the simulation, robot motion, noise, and Monte Carlo evaluation.
+
+1. **Simulation Parameters:**
+   - `dt`: Time step for the simulation (in seconds).
+   - `simulation_time`: Time for the exploration scenario (in steps).
+   - `loop_time`: Time for the loop-closure scenario (in steps).
+   - `n_landmarks`: Number of landmarks in the environment.
+   - `sensing_range`: Maximum distance the robot can sense landmarks.
+   - `map_size`: Size of the map environment.
+
+2. **Robot Parameters:**
+   - `v`: Linear velocity of the robot (meters per second).
+   - `omega`: Angular velocity of the robot (radians per second).
+
+3. **Noise Parameters:**
+   - `sigma_v`: Standard deviation of velocity noise.
+   - `sigma_omega`: Standard deviation of angular velocity noise.
+   - `sigma_r`: Standard deviation of range measurement noise.
+   - `sigma_theta`: Standard deviation of bearing measurement noise.
+
+4. **Monte Carlo Parameters:**
+   - `MC_runs`: Number of Monte Carlo simulations to average the results.
+
+---
+
+### **Methods**
+
+#### **1. Simulation Scenarios**
+- **`run_exploration_scenario` and `run_loop_closure_scenario`:**
+  - Simulate two scenarios:
+    - **Exploration:** The robot explores new areas.
+    - **Loop Closure:** The robot repeatedly revisits areas (circular trajectory).
+  - For each Monte Carlo run:
+    1. Initialize robot and landmark states.
+    2. Simulate robot motion, prediction, and update steps for the EKF.
+    3. Record and average results across runs.
+
+#### **2. Supporting Methods**
+- **`generate_landmarks`:**
+  - Creates landmarks in a structured grid with randomness.
+  - Adds perturbations for a realistic environment.
+
+- **`move_robot`:**
+  - Simulates the robot's true motion based on linear and angular velocities:
+    - Straight-line motion for `omega ≈ 0`.
+    - Circular motion otherwise.
+  - Ensures orientation (`x(3)`) is wrapped to the range \([-π, π]\).
+
+- **`predict_step`:**
+  - Implements the prediction phase of EKF:
+    1. Adds noise to the robot's control inputs (velocity and angular velocity).
+    2. Predicts the robot's next state using motion equations.
+    3. Updates the state covariance matrix using the motion model's Jacobian (`F`) and process noise (`Q`).
+
+- **`update_step`:**
+  - Implements the update phase of EKF:
+    1. Iterates through all landmarks within sensing range.
+    2. Computes expected measurements (range and bearing) and compares them with noisy actual measurements.
+    3. Updates the robot's state and covariance matrix using Kalman gain (`K`).
+    4. Accounts for measurement noise (`R`).
+
+- **`calculate_metrics`:**
+  - Computes metrics to evaluate EKF performance:
+    - Root Mean Square (RMS) errors for pose and heading.
+    - Normalized Estimation Error Squared (NEES) for filter consistency.
+
+#### **3. Visualization**
+- **`plot_results`:**
+  - Generates plots to visualize NEES and RMS errors for both scenarios.
+  - Compares EKF variants (e.g., ideal, standard, FEJ-EKF, robocentric).
+  - Saves high-resolution plots and figure files.
+
+---
+
+### **Simulation Workflow**
+1. **Setup:** Define simulation parameters (e.g., landmarks, noise).
+2. **Monte Carlo Runs:**
+   - Generate trajectories (straight, turning, looping).
+   - Predict and update robot state using EKF.
+3. **Evaluation:**
+   - Aggregate results across Monte Carlo runs.
+   - Compute metrics (e.g., NEES, RMS errors).
+4. **Visualization:** Plot metrics for comparative analysis.
+
+---
+
+### **Key Concepts Highlighted in the Code**
+1. **Monte Carlo Simulations:**
+   - Repeat experiments with randomized noise to ensure robustness of results.
+
+2. **State Representation:**
+   - Robot pose (\(x, y, \theta\)) and landmark positions (\(x, y\)) are combined into a single state vector.
+
+3. **Performance Metrics:**
+   - RMS and NEES highlight the filter's accuracy and consistency.
+
+4. **Jacobian Calculations:**
+   - Motion and measurement models' derivatives help propagate uncertainty.
+
+5. **EKF Variants:**
+   - The `ekf_type` parameter allows testing different EKF implementations (e.g., standard, FEJ-EKF, robocentric).
+
+
+
